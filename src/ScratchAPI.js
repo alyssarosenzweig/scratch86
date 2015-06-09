@@ -4,7 +4,7 @@
  * used by lionize.js
  */
 
-var http = require("http");
+var request = require("request");
 
 /*
  * pull - pulls a project of the website
@@ -14,8 +14,8 @@ var http = require("http");
  */
 
 function pull(projectID, callback) {
-    http.get("http://projects.scratch.mit.edu/internalapi/project/" + projectID + "/get/", function(res) {
-        callback(res);
+    request("http://projects.scratch.mit.edu/internalapi/project/" + projectID + "/get/", function(err, resp, body) { 
+       callback(JSON.parse(body));
     }).on('error', function(e) {
         console.error(e);
     });

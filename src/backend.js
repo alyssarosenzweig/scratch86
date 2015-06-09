@@ -6,5 +6,7 @@
  */
 
 module.exports = function(project, output) {
+    console.log(project);
+
     console.log("Backend stub");
 }
