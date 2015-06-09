@@ -1,10 +1,10 @@
 {
   "name": "scratch86",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Static / JIT compilation of MIT Scratch projects in x86 assembly",
   "main": "bin/lionize.js",
   "bin": {
-    "scratch86": "lionize.js"
+    "scratch86": "bin/lionize.js"
   },
   "directories": {
     "test": "test"
