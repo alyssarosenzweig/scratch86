@@ -5,12 +5,45 @@
  * HERE BE DRAGONS!
  */
 
+//var processScript = require("./processScript");
+
+var LLVMOut = [];
+var indentStatus = 0;
+
+function emit(line, indentation) {
+    if(indentation < 0) indentStatus += indentation;
+    
+    var out = "";
+    for(var i = 0; i < indentStatus; ++i) out += "    ";
+    
+    LLVMOut.push( out + line );
+
+    if(indentation > 0) indentStatus += indentation;
+}
+
+var functionCounter = 0; // TODO: infer legitimate names for scripts
+
 // process a script
 // this method actually hooks into code generation :)
 
 function processScript(context, script) {
     console.log("Compiling script:");
     console.log(script);
+
+    // first element of the script block is the hat block
+    // this determines when this function will be called
+    // basically, this is used as a note to the runtime
+    // and yes, scripts are functions :)
+
+    var hatBlock = script[0];
+
+    // TODO: implement hat blocks
+
+    // emit a function definition
+    
+    emit("declare void @" + hatBlock[0] + (functionCounter++) + "() {", 1);
+
+    emit("}", -1);
 }
 
 // processes a child (basically a sprite)
