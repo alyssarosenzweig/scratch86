@@ -5,6 +5,8 @@
  * HERE BE DRAGONS!
  */
 
+var fs = require("fs");
+
 //var processScript = require("./processScript");
 
 var LLVMOut = [];
@@ -41,7 +43,7 @@ function processScript(context, script) {
 
     // emit a function definition
     
-    emit("declare void @" + hatBlock[0] + (functionCounter++) + "() {", 1);
+    emit("define void @" + hatBlock[0] + (functionCounter++) + "() {", 1);
 
     emit("}", -1);
 }
@@ -69,6 +71,8 @@ module.exports = function(project, output) {
     project.children.forEach(function(child) {
         processChild(child);
     });
+
+    fs.writeFile(output, LLVMOut.join("\n") + "\n"); 
 
     console.log("Backend stub");
 }
