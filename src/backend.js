@@ -28,6 +28,10 @@ var functionCounter = 0; // TODO: infer legitimate names for scripts
 // compileBlock is the meat of the compiler
 // it recursively emits IR to make stuff happen
 // this is the real "HERE BE DRAGONS" <3
+// its return type is a reference to the output of its operation
+// (typically an IR register, a getelementptr, a constant, etc.),
+// but in an array, where the second element is the type.
+// type tracking is implemented this way to optimize the IR for Scratch's weird type rules.
 
 function compileBlock(block, expectedType) {
     if(block[0] == "playSound:") {
@@ -39,7 +43,7 @@ function compileBlock(block, expectedType) {
         
         // just call putchar
 
-        emit("call void @putchar(i32 " + argument + ")");
+        emit("call void @putchar(i32 " + argument[0] + ")");
     } else {
         console.error("Unknown block:");
         console.error(block);
@@ -47,9 +51,14 @@ function compileBlock(block, expectedType) {
         // return a stub value if needed
 
         if(expectedType == 'i8' || expectedType == 'i16' || expectedType == 'i32') {
-            return "0";
+            return ["0", expectedType];
         }
     }
+
+    // if we're still here, it's probably a void block and not part of a chain :)
+    // for good measure, just in case, we return type void (I know, wat?)
+
+    return [null, "void"];
 }
 
 // process a script
