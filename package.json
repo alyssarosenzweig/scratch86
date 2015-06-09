@@ -1,0 +1,27 @@
+{
+  "name": "scratch86",
+  "version": "1.0.0",
+  "description": "Static / JIT compilation of MIT Scratch projects in x86 assembly",
+  "main": "bin/lionize.js",
+  "bin": {
+    "scratch86": "lionize.js"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "minimist": "1.1.1"
+  },
+  "keywords": [
+    "compiler",
+    "jit",
+    "static",
+    "scratch",
+    "crazy"
+  ],
+  "author": "Alyssa Rosenzweig",
+  "license": "MIT"
+}
