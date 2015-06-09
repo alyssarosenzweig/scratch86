@@ -25,6 +25,33 @@ function emit(line, indentation) {
 
 var functionCounter = 0; // TODO: infer legitimate names for scripts
 
+// compileBlock is the meat of the compiler
+// it recursively emits IR to make stuff happen
+// this is the real "HERE BE DRAGONS" <3
+
+function compileBlock(block, expectedType) {
+    if(block[0] == "playSound:") {
+        // heh, so sound isn't actually supported atm
+        // TODO: actually implement sound
+        // but, this block is used as a putchar ABI for testing scratch->LLVM until a graphics runtime is setup :)
+        
+        var argument = compileBlock(block[1], "i32");
+        
+        // just call putchar
+
+        emit("call void @putchar(i32 " + argument + ")");
+    } else {
+        console.error("Unknown block:");
+        console.error(block);
+
+        // return a stub value if needed
+
+        if(expectedType == 'i8' || expectedType == 'i16' || expectedType == 'i32') {
+            return "0";
+        }
+    }
+}
+
 // process a script
 // this method actually hooks into code generation :)
 
@@ -44,6 +71,10 @@ function processScript(context, script) {
     // emit a function definition
     
     emit("define void @" + hatBlock[0] + (functionCounter++) + "() {", 1);
+
+    // for each block in the script, compile it!
+    
+    script.forEach(compileBlock);
 
     emit("}", -1);
 }
