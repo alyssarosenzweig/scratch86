@@ -114,6 +114,9 @@ function processScript(context, script) {
     
     script.forEach(compileBlock);
 
+    // return block is needed to avoid LLVM hating me
+
+    emit("ret void");
     emit("}", -1);
 }
 
@@ -141,7 +144,17 @@ module.exports = function(project, output) {
         processChild(child);
     });
 
-    fs.writeFile(output, LLVMOut.join("\n") + "\n"); 
+    // since there are no header files in Scratch,
+    // we have to account for this _ourselves_
+    // erg :p
+    
+    var preamble = "declare void @putchar(i32)\n\n" +
+                    "define i32 @main() {\n" +
+                    "   call void @whenGreenFlag0()\n" +
+                    "   ret i32 0\n" +
+                    "}\n\n";
+
+    fs.writeFile(output, preamble + LLVMOut.join("\n") + "\n\n"); 
 
     console.log("Backend stub");
 }
