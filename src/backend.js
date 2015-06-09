@@ -25,6 +25,14 @@ function emit(line, indentation) {
 
 var functionCounter = 0; // TODO: infer legitimate names for scripts
 
+var functionContext = {
+    registerCount: 0
+};
+
+function newRegister() {
+    return "%" + (++functionContext.registerCount);
+}
+
 // compileBlock is the meat of the compiler
 // it recursively emits IR to make stuff happen
 // this is the real "HERE BE DRAGONS" <3
@@ -44,6 +52,27 @@ function compileBlock(block, expectedType) {
         // just call putchar
 
         emit("call void @putchar(i32 " + argument[0] + ")");
+    } else if(block[0] == '+') { // addition
+        // recursively get arguments
+        
+        var argument0 = compileBlock(block[1], "i32");
+        var argument1 = compileBlock(block[2], "i32");
+
+        // TODO: typecheck the arguments to ensure we don't need to demote anything
+        // in the future, compileBlock can refuse our type request and return a double instead
+        // this is bad, because doubles are slow, but also necessary in some cases
+        // the logic here would be to cast both arguments to doubles and then return as a double
+        // yes, this causes a chain reaction. I'm sad too :(
+    
+        var register = newRegister();    
+        emit(register + " = add " + "i32" + " " + argument0[0] + ", " + argument1[0]);
+
+        return [register, "i32"];
+    } else if(!isNaN(block)) {
+        // if the block is a number, we can probably just return it as is :)
+        // TODO: infer type of whether it's an integer or a float
+
+        return [block, "i32"];
     } else {
         console.error("Unknown block:");
         console.error(block);
