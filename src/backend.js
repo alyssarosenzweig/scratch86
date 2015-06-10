@@ -46,6 +46,28 @@ function getTypeIndex(type) {
     return typeIndex;
 }
 
+function staticCast(value, currentType, outputType) {
+    if(currentType == outputType) return value; // don't waste time :)
+
+    if(currentType == "double") {
+        if(outputType == "i32") {
+            // emit an 'fptoui -- floating point to unsigned intener'
+            var output = newRegister();
+
+            emit(output + " = fptoui double " + value + " to i32");
+
+            return output;
+        } else {
+            console.error("I don't how to static cast a double to a "+currentType);
+        }
+    } else {
+        console.error("I don't know how to static cast "+currentType);
+        // TODO
+        
+        process.exit(0);
+    }
+}
+
 // compileBlock is the meat of the compiler
 // it recursively emits IR to make stuff happen
 // this is the real "HERE BE DRAGONS" <3
@@ -62,14 +84,17 @@ function compileBlock(block, expectedType) {
         
         var argument = compileBlock(block[1], "i32");
         
+        // putchar _needs_ an i32, so cast
+        var i32ified = staticCast(argument[1][0], argument[1][1], "i32");
+
         // just call putchar
 
-        emit("call void @putchar(i32 " + argument[0] + ")");
+        emit("call void @putchar(i32 " + i32ified + ")");
     } else if(block[0] == '+') { // addition
         // recursively get arguments
         
-        var argument0 = compileBlock(block[1], "i32");
-        var argument1 = compileBlock(block[2], "i32");
+        var argument0 = compileBlock(block[1], "double");
+        var argument1 = compileBlock(block[2], "double");
 
         // TODO: typecheck the arguments to ensure we don't need to demote anything
         // in the future, compileBlock can refuse our type request and return a double instead
@@ -77,10 +102,12 @@ function compileBlock(block, expectedType) {
         // the logic here would be to cast both arguments to doubles and then return as a double
         // yes, this causes a chain reaction. I'm sad too :(
     
-        var register = newRegister();    
-        emit(register + " = add " + "i32" + " " + argument0[0] + ", " + argument1[0]);
+        // TODO: figure out how to use integers in the first place!!!
 
-        return [register, "i32"];
+        var register = newRegister();    
+        emit(register + " = fadd " + "double" + " " + argument0[0] + ", " + argument1[0]);
+
+        return [register, "double"];
     } else if(block[0] == "setVar:to:") {
        // setting a variable is unfortunately multistep
        // first, we need to infer the type of the input
@@ -98,7 +125,10 @@ function compileBlock(block, expectedType) {
         // We will honor her marriage to the less standard double type, and simply set the type field of the structure accordingly, despite the performance hit.
         // ^ programmer's poetry 
 
-        var value = compileBlock(block[2], "i32");
+        // TODO: implement what I just wrote
+        // we use only doubles for now :(
+
+        var value = compileBlock(block[2], "double"); // TODO: change to i32 and still make things work right
 
         emit("store i32 "+getTypeIndex(value[1])+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
     
@@ -170,14 +200,14 @@ function compileBlock(block, expectedType) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
 
-        return [block, "i32"];
+        return [block, "double"];
     } else {
         console.error("Unknown block:");
         console.error(block);
 
         // return a stub value if needed
 
-        if(expectedType == 'i8' || expectedType == 'i16' || expectedType == 'i32') {
+        if(expectedType == 'i32' || expectedType == 'double') {
             return ["0", expectedType];
         }
     }
@@ -275,12 +305,12 @@ module.exports = function(project, output) {
     // anyway, here's the original C version (approximately):
 
     // struct Variable {
-    //        int i32_value;
+    //        i8* string_value;
     //        double double_value;
     //        enum VariableType type;
     // }
     //
-    // enum VariableType { i32_type, double_type }
+    // enum VariableType { string_type, double_type }
 
     // do note that VariableType is at the end of the struct,
     // and that the other fields follow the order from the enum.
@@ -290,7 +320,7 @@ module.exports = function(project, output) {
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
                     "\n" +
-                    "%struct.Variable = type { i32, double, i32 }\n" +
+                    "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +
