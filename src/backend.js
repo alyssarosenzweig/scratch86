@@ -38,7 +38,7 @@ function newString() {
 }
 
 function getTypeIndex(type) {
-    var typeIndex = (type == "i32") ? 0 :
+    var typeIndex = (type == "i8*") ? 0 :
                     (type == "double") ? 1 :
                     -1;
 
