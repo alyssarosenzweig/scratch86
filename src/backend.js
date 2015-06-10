@@ -32,6 +32,20 @@ function newRegister() {
     return "%" + (++functionContext.registerCount);
 }
 
+function getTypeIndex(type) {
+    var typeIndex = (type == "i32") ? 0 :
+                    (type == "double") ? 1 :
+                    -1;
+
+    if(typeIndex == -1) {
+        console.error("Unknown type index");
+        console.error(type);
+        process.exit(0);
+    }
+
+    return typeIndex;
+}
+
 // compileBlock is the meat of the compiler
 // it recursively emits IR to make stuff happen
 // this is the real "HERE BE DRAGONS" <3
@@ -86,21 +100,72 @@ function compileBlock(block, expectedType) {
 
         var value = compileBlock(block[2], "i32");
 
-        var typeIndex = (value[1] == "i32") ? 0 :
-                        (value[1] == "double") ? 1 :
-                        -1;
-
-        if(typeIndex == -1) {
-            console.error("Unknown type index");
-            console.error(value);
-            process.exit(0);
-        }
-
-        emit("store i32 "+typeIndex+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
+        emit("store i32 "+getTypeIndex(value[1])+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
     
-        emit("store "+ value[1] + " " + value[0] + ", " + value[1] + "* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 " + typeIndex + "), align 8");
+        emit("store "+ value[1] + " " + value[0] + ", " + value[1] + "* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 " + getTypeIndex(value[1]) + "), align 8");
 
         console.log("Value: "+value);
+    } else if(block[0] == "readVariable") {
+        // reading a variable is really difficult, as it turns out
+        // well, difficult to do it fast
+        // the issue is that there is an expected type,
+        // and we need to figure out some way to meet the expectations,
+        // while still maintaining type safety in LLVM
+        // TODO: microoptimizations here :)
+
+        // get the runtime type
+
+        var typeRegister = newRegister();
+
+        emit(typeRegister + " = load i32* getelementptr inbounds (%struct.Variable* @" + block[1] + ", i32 0, i32 2), align 8");
+
+        var acceptableTypes = [];
+
+        if(Array.isArray(expectedType)) acceptableTypes = expectedType;
+        else                            acceptableTypes = [expectedType];
+
+        var baseID = functionContext.registerCount + 1; 
+        var failLabel = baseID + (2 * acceptableTypes.length);
+        var resumeLabel = failLabel + 1;
+        var phiNodes = [];
+
+        // emit a switch table
+        emit("switch i32 " + typeRegister + ", label %" + failLabel + " [", 1);
+        
+        acceptableTypes.forEach(function(type, index) {
+            emit("i32 " + getTypeIndex(type) + ", label " + "%" + (baseID + (index * 2)));
+        });
+
+        emit("]", -1);
+
+        // emit the standard branch paths
+        acceptableTypes.forEach(function(type, index) {
+           var label = newRegister(); // label
+          
+           var tempReg = newRegister();
+           emit(tempReg + " = load " + type + "* getelementptr inbounds (%struct.Variable* @" + block[1] + ", i32 0, i32 0), align 8");
+           emit("br label %" + resumeLabel);
+        
+           phiNodes.push("[ " + tempReg + ", " + label + " ]");
+        });
+
+        // emit a failure path :(
+        ++functionContext.registerCount; // label
+        emit("call void @exit(i32 42)");
+        emit("unreachable");
+
+        // finally, emit the resume path
+        // basically, we use a phi node to collect the output from wherever we just were, throw that in a register, and let the calling code figure out what to do from here! :)
+
+        ++functionContext.registerCount; // label
+        var outputRegister = newRegister();
+        emit(outputRegister + " = phi " + acceptableTypes[0] + " " + phiNodes.join(", "));
+       
+        // by this point, we have the final value in outputRegister,
+        // and we can gaurentee that its of type acceptableTypes[0]
+        // that's all we need to know to return!
+
+       return [outputRegister, acceptableTypes[0]]; 
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
@@ -223,6 +288,7 @@ module.exports = function(project, output) {
     // although I'd have to think more about if this is actually safe
 
     var preamble = "declare void @putchar(i32)\n" +
+                    "declare void @exit(i32)\n" + 
                     "\n" +
                     "%struct.Variable = type { i32, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
