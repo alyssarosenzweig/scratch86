@@ -85,11 +85,21 @@ function compileBlock(block, expectedType) {
         var argument = compileBlock(block[1], "i32");
         
         // putchar _needs_ an i32, so cast
-        var i32ified = staticCast(argument[1][0], argument[1][1], "i32");
+        var i32ified = staticCast(argument[0], argument[1], "i32");
 
         // just call putchar
 
         emit("call void @putchar(i32 " + i32ified + ")");
+    } else if(block[0] == "say:") {
+        // see above
+        // this is the puts ABI :)
+        // TODO: actually implement speech bubbles and graphics
+        
+        var argument = compileBlock(block[1], "i8*");
+
+        var stringified = staticCast(argument[0], argument[1], "i8*");
+
+        emit("call void @puts(i8* " + stringified + ")");
     } else if(block[0] == '+') { // addition
         // recursively get arguments
         
@@ -201,6 +211,8 @@ function compileBlock(block, expectedType) {
         // TODO: infer type of whether it's an integer or a float
 
         return [block, "double"];
+    } else if(typeof block === 'string') {
+        return [block, "i8*"];
     } else {
         console.error("Unknown block:");
         console.error(block);
@@ -325,6 +337,7 @@ module.exports = function(project, output) {
 
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
+                    "declare void @puts(i8*)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
