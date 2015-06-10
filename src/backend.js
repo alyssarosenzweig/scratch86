@@ -64,6 +64,7 @@ function staticCast(value, currentType, outputType) {
             return output;
         } else {
             console.error("I don't how to static cast a double to a "+currentType);
+            process.exit(0);
         }
     } else {
         console.error("I don't know how to static cast "+currentType);
@@ -100,7 +101,7 @@ function compileBlock(block, expectedType) {
         // this is the puts ABI :)
         // TODO: actually implement speech bubbles and graphics
         
-        var argument = compileBlock(block[1], "i8*");
+        var argument = compileBlock(block[1], ["i8*", "double"]);
 
         var stringified = staticCast(argument[0], argument[1], "i8*");
 
@@ -143,6 +144,7 @@ function compileBlock(block, expectedType) {
         // TODO: implement what I just wrote
         // we use only doubles for now :(
 
+        console.log(value);
         var value = compileBlock(block[2], "double"); // TODO: change to i32 and still make things work right
 
         emit("store i32 "+getTypeIndex(value[1])+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
@@ -188,7 +190,7 @@ function compileBlock(block, expectedType) {
            var label = newRegister(); // label
           
            var tempReg = newRegister();
-           emit(tempReg + " = load " + type + "* getelementptr inbounds (%struct.Variable* @" + block[1] + ", i32 0, i32 0), align 8");
+           emit(tempReg + " = load " + type + "* getelementptr inbounds (%struct.Variable* @" + block[1] + ", i32 0, i32 " + getTypeIndex(type) + "), align 8");
            emit("br label %" + resumeLabel);
         
            phiNodes.push("[ " + tempReg + ", " + label + " ]");
@@ -214,7 +216,7 @@ function compileBlock(block, expectedType) {
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
-
+        console.log(block);
         return [block, "double"];
     } else if(typeof block === 'string') {
         // unfortunately, strings in LLVM are NOT atomic
@@ -322,8 +324,6 @@ function processVariable(context, variable) {
 }
 
 module.exports = function(project, output) {
-    console.log(project);
-
     // process stage variables
     
     if(typeof project.variables !== 'undefined') {
