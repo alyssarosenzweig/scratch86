@@ -7,10 +7,9 @@
 
 var fs = require("fs");
 
-//var processScript = require("./processScript");
-
 var LLVMOut = [];
 var indentStatus = 0;
+var globalDefinitions = [];
 
 function emit(line, indentation) {
     if(indentation < 0) indentStatus += indentation;
@@ -139,7 +138,31 @@ function processChild(child) {
     }
 }
 
+// processes a variable definition
+// basically define the global container for the variable,
+// and potentially set a default value in @main
+
+function processVariable(context, variable) {
+    // TODO: fix naming conflicts for sprite contexts
+    // add the global definition
+
+    var name = variable.name;
+    var value = variable.value;
+
+    globalDefinitions.push("@" + name + " = common global %struct.Variable zeroinitializer, align 8");
+    
+    // TODO: value initialization
+}
+
 module.exports = function(project, output) {
+    console.log(project);
+
+    // process stage variables
+    
+    project.variables.forEach(function(variable) {
+        processVariable(project, variable);
+    });
+
     project.children.forEach(function(child) {
         processChild(child);
     });
@@ -148,7 +171,11 @@ module.exports = function(project, output) {
     // we have to account for this _ourselves_
     // erg :p
     
-    var preamble = "declare void @putchar(i32)\n\n" +
+    var preamble = "declare void @putchar(i32)\n" +
+                    "\n" +
+                    "%struct.Variable = type { i32, i32, double }\n" +
+                    (globalDefinitions.join("\n")) + 
+                    "\n" +
                     "define i32 @main() {\n" +
                     "   call void @whenGreenFlag0()\n" +
                     "   ret i32 0\n" +
