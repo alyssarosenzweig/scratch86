@@ -115,8 +115,10 @@ function compileBlock(block, expectedType) {
         var stringified = staticCast(argument[0], argument[1], "i8*");
 
         emit("call void @puts(i8* " + stringified + ")");
-    } else if(block[0] == '+') { // addition
+    } else if(Array.isArray(block) && ['+', '-', '*', '/'].indexOf(block[0]) > -1) { // addition
         // recursively get arguments
+        console.log("blag");
+        console.log(block); 
         
         var argument0 = compileBlock(block[1], "double");
         var argument1 = compileBlock(block[2], "double");
@@ -129,8 +131,15 @@ function compileBlock(block, expectedType) {
     
         // TODO: figure out how to use integers in the first place!!!
 
-        var register = newRegister();    
-        emit(register + " = fadd " + "double" + " " + argument0[0] + ", " + argument1[0]);
+        var op = ({
+                "+": "fadd",
+                "-": "fsub",
+                "*": "fmul",
+                "/": "fdiv"
+        })[block[0]];
+
+        var register = newRegister();
+        emit(register + " = " + op + " " + "double" + " " + argument0[0] + ", " + argument1[0]);
 
         return [register, "double"];
     } else if(block[0] == "setVar:to:") {
@@ -237,6 +246,11 @@ function compileBlock(block, expectedType) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
         console.log(block);
+        
+        // force cast to integer in LLVM
+        // TODO: make this less hacky
+        if(block.toString().indexOf(".") == -1) block = block.toString() + ".0";
+
         return [block, "double"];
     } else if(typeof block === 'string') {
         // unfortunately, strings in LLVM are NOT atomic
