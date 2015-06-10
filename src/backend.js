@@ -23,6 +23,7 @@ function emit(line, indentation) {
 }
 
 var functionCounter = 0; // TODO: infer legitimate names for scripts
+var stringCount = 0;
 
 var functionContext = {
     registerCount: 0
@@ -30,6 +31,10 @@ var functionContext = {
 
 function newRegister() {
     return "%" + (++functionContext.registerCount);
+}
+
+function newString() {
+    return "@.str" + (++stringCount);
 }
 
 function getTypeIndex(type) {
@@ -212,7 +217,28 @@ function compileBlock(block, expectedType) {
 
         return [block, "double"];
     } else if(typeof block === 'string') {
-        return [block, "i8*"];
+        // unfortunately, strings in LLVM are NOT atomic
+        // we have to create a definition for them preinitialized,
+        // and get a reference to that definition here with getelementptr
+        // I know, WAT?! (although if you look at the resulting assembly it makes some amount of sense)
+
+        // first, we need a _name_ for the string
+        var stringName = newString();
+        
+        // we emit to the preamble
+
+        globalDefinitions.push( 
+            stringName + " = internal constant [" + (block.length+1) + " x i8] c\""
+            + block + "\\00\"");
+
+        // then, for the result, we have to emit a getelementptr instruction
+        // getelementptr indexes an array without dereferencing
+        // so we index it with 0
+
+        var reference = "getelementptr inbounds ([" + (block.length+1) + " x i8]* " + stringName +
+                        ", i32 0, i32 0)";
+
+        return [reference, "i8*"];
     } else {
         console.error("Unknown block:");
         console.error(block);
