@@ -67,6 +67,40 @@ function compileBlock(block, expectedType) {
         emit(register + " = add " + "i32" + " " + argument0[0] + ", " + argument1[0]);
 
         return [register, "i32"];
+    } else if(block[0] == "setVar:to:") {
+       // setting a variable is unfortunately multistep
+       // first, we need to infer the type of the input
+       // then, we set the type of the variable to that type
+       // finally, we set the appropiate field in the variable struct to the value
+
+        var varname = block[1]; // JSON hackers, don't even try!
+
+        // For type inference, we "request" for the input to be i32
+        // But this is kind of selfish of us,
+        // I mean, what if the input isn't actually i32?
+        // What if she self-identifies as a double?
+        // Why must we forcibly cast her into this highly optimizable, simpler box in society against her will?
+        // But--- as a coder from Massachusetts, California, or 1 of about 30 other states---
+        // We will honor her marriage to the less standard double type, and simply set the type field of the structure accordingly, despite the performance hit.
+        // ^ programmer's poetry 
+
+        var value = compileBlock(block[2], "i32");
+
+        var typeIndex = (value[1] == "i32") ? 0 :
+                        (value[1] == "double") ? 1 :
+                        -1;
+
+        if(typeIndex == -1) {
+            console.error("Unknown type index");
+            console.error(value);
+            process.exit(0);
+        }
+
+        emit("store i32 "+typeIndex+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
+    
+        emit("store "+ value[1] + " " + value[0] + ", " + value[1] + "* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 " + typeIndex + "), align 8");
+
+        console.log("Value: "+value);
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
@@ -170,10 +204,27 @@ module.exports = function(project, output) {
     // since there are no header files in Scratch,
     // we have to account for this _ourselves_
     // erg :p
-    
+ 
+    // we define the Variable struct in LLVM
+    // too bad clang didn't annotate the actual struct for me
+    // anyway, here's the original C version (approximately):
+
+    // struct Variable {
+    //        int i32_value;
+    //        double double_value;
+    //        enum VariableType type;
+    // }
+    //
+    // enum VariableType { i32_type, double_type }
+
+    // do note that VariableType is at the end of the struct,
+    // and that the other fields follow the order from the enum.
+    // this is to allow for big optimization (no branching!) of dynamic type lookups
+    // although I'd have to think more about if this is actually safe
+
     var preamble = "declare void @putchar(i32)\n" +
                     "\n" +
-                    "%struct.Variable = type { i32, i32, double }\n" +
+                    "%struct.Variable = type { i32, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +
