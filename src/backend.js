@@ -62,8 +62,17 @@ function staticCast(value, currentType, outputType) {
             emit(output + " = fptoui double " + value + " to i32");
 
             return output;
+        } else if(outputType == "i8*") {
+            // this is a double -> string conversion
+            // which is unfortunately nontrivial:
+            // so, we just call our standard library :)
+
+            var output = newRegister();
+            emit(output + " = call i8* @sdtoa(double " + value + ")");
+
+            return output;  
         } else {
-            console.error("I don't how to static cast a double to a "+currentType);
+            console.error("I don't how to static cast a double to a "+outputType);
             process.exit(0);
         }
     } else {
@@ -171,8 +180,9 @@ function compileBlock(block, expectedType) {
         if(Array.isArray(expectedType)) acceptableTypes = expectedType;
         else                            acceptableTypes = [expectedType];
 
+
         var baseID = functionContext.registerCount + 1; 
-        var failLabel = baseID + (2 * acceptableTypes.length);
+        var failLabel = baseID + (3 * acceptableTypes.length) - 1;
         var resumeLabel = failLabel + 1;
         var phiNodes = [];
 
@@ -180,7 +190,14 @@ function compileBlock(block, expectedType) {
         emit("switch i32 " + typeRegister + ", label %" + failLabel + " [", 1);
         
         acceptableTypes.forEach(function(type, index) {
-            emit("i32 " + getTypeIndex(type) + ", label " + "%" + (baseID + (index * 2)));
+            // calculate the index
+            // this isn't trivial, because everything but index 0 consumes 3 register allocations,
+            // but index 0 only consumes 2
+            
+            var reference = (index == 0) ? 0 :
+                            (index * 3) - 1;
+
+            emit("i32 " + getTypeIndex(type) + ", label " + "%" + (baseID + reference));
         });
 
         emit("]", -1);
@@ -191,9 +208,12 @@ function compileBlock(block, expectedType) {
           
            var tempReg = newRegister();
            emit(tempReg + " = load " + type + "* getelementptr inbounds (%struct.Variable* @" + block[1] + ", i32 0, i32 " + getTypeIndex(type) + "), align 8");
+            
+           var outputReg = staticCast(tempReg, type, acceptableTypes[0]); 
+           
            emit("br label %" + resumeLabel);
         
-           phiNodes.push("[ " + tempReg + ", " + label + " ]");
+           phiNodes.push("[ " + outputReg + ", " + label + " ]");
         });
 
         // emit a failure path :(
@@ -364,6 +384,7 @@ module.exports = function(project, output) {
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
                     "declare void @puts(i8*)\n" + 
+                    "declare i8* @sdtoa(double)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
