@@ -288,13 +288,19 @@ module.exports = function(project, output) {
 
     // process stage variables
     
-    project.variables.forEach(function(variable) {
-        processVariable(project, variable);
-    });
+    if(typeof project.variables !== 'undefined') {
+        project.variables.forEach(function(variable) {
+            processVariable(project, variable);
+        });
+    }
 
-    project.children.forEach(function(child) {
-        processChild(child);
-    });
+    // and process sprites!
+
+    if(typeof project.children !== 'undefined') {
+        project.children.forEach(function(child) {
+            processChild(child);
+        });
+    }
 
     // since there are no header files in Scratch,
     // we have to account for this _ourselves_
