@@ -88,6 +88,30 @@ VisibleClass** classList;
 // global SDL context
 SDL_Window* window;
 
+typedef void (*Script)(void);
+
+Script* greenFlagScripts;
+int greenFlagScriptCount;
+int gfscs = 0;
+
+void greenFlagClicked();
+void callScript(Script s);
+
+void setEventCount(int eventType, int count) {
+    if(eventType == 1) {
+        greenFlagScriptCount = count;
+        greenFlagScripts = malloc(sizeof(Script) * count);
+    }
+}
+
+void registerEvent(int eventType, Script s) {
+    if(eventType == 1) {
+        // greenFlag
+
+        greenFlagScripts[gfscs++] = s;
+    }
+}
+
 void ScratchInitialize() {
     // intiialize SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -106,11 +130,53 @@ void ScratchInitialize() {
         exit(1);
     }
 
+    // metaphorical clicking of the green flag
+    greenFlagClicked();
+
+    // now, we hang this thread
+    // all of the computation is in pthreads
+    // TODO: event loop here?
+
+    for(;;);
 }
 
 void ScratchDestroy() {
     SDL_DestroyWindow(window);
     SDL_Quit();
+}
+
+// we don't _actually_ have a green flag button,
+// but this routine just loops through greenFlagScripts,
+// and calls every function in its own thread
+
+void greenFlagClicked() {
+    if(greenFlagScripts == NULL) {
+        printf("Uh oh! No green flag events have been allocated. That's not good...");
+    }
+
+    int i = 0;
+
+    while(i < greenFlagScriptCount) {
+        Script s = greenFlagScripts[i];
+        
+        // as much as I want to call it directly,
+        // we have to implement Scratch's threading capabilities correctly
+        // (ugh)
+        // to the pthread's!
+        // TODO: windows support
+
+        callScript(s);
+
+        ++i;
+    }
+}
+
+// threading-based Script call
+// TODO: windows macro shim
+
+void callScript(Script s) {
+    pthread_t thread;
+    pthread_create(&thread, NULL, s, NULL);
 }
 
 // ScratchRenderStage does just what its name implies:

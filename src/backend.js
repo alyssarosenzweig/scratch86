@@ -10,6 +10,10 @@ var fs = require("fs");
 var indentStatus = 0;
 var globalDefinitions = [];
 
+var eventDefinitions = [];
+var greenFlagCount = 0;
+var otherEventCount = 0;
+
 // different code contexts will generate code at different times,
 // which would normally be ridiculluous hard to implement correctly,
 // but we can actually just emit code blocks to a temporary stack instead
@@ -498,12 +502,31 @@ function processScript(context, script) {
     // TODO: implement hat blocks
 
     // emit a function definition
-    
-    emit("define void @" + hatBlock[0] + (functionCounter++) + "() {", 1);
+   
+    var fnName = "undefined";
+
+    // for each event recorded, there is a corresponding registerEvent call
+    // TODO: test if this will affect load times harshly
+
+    if(hatBlock[0] == "whenGreenFlag") {
+        fnName = "greenFlag" + (functionCounter++);
+        eventDefinitions.push("    call void @registerEvent(i32 1, void ()* @"+ fnName + ")");
+
+        greenFlagCount++;
+    } else {
+        console.log("Unknown hat block:");
+        console.log(fnName);
+        console.log("Removed as dead code");
+        process.exit(0);
+    }
+
+    emit("define void @" + fnName + "() {", 1);
 
     // for each block in the script, compile it!
     
-    script.forEach(compileBlock);
+    script.forEach(function(b, index) {
+        if(index > 0) compileBlock(b, "void")
+    });
 
     // return block is needed to avoid LLVM hating me
 
@@ -524,7 +547,7 @@ function processChild(child) {
     // process those seperately
 
     if(typeof child.scripts !== 'undefined') {
-        child.scripts.forEach(function(script) {
+        child.scripts.forEach(function(script, index) {
             processScript(child, script[2]);
         });
     }
@@ -593,13 +616,17 @@ module.exports = function(project, output) {
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "declare void @ScratchInitialize()\n" + 
                     "declare void @ScratchDestroy()\n" + 
+                    "declare void @registerEvent(i32, void ()*)\n" + 
+                    "declare void @setEventCount(i32, i32)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +
+                    "   call void @setEventCount(i32 1, i32 " + greenFlagCount + ")\n" +
+                    (eventDefinitions.join("\n")) +
+                    "\n"+
                     "   call void @ScratchInitialize()\n" +
-                    "   call void @whenGreenFlag0()\n" +
                     "   call void @ScratchDestroy()\n" +
                     "   ret i32 0\n" +
                     "}\n\n";
