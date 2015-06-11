@@ -206,6 +206,40 @@ function compileBlock(block, expectedType) {
         emitRawBlock(path1);
         emitRawBlock(path2);
     } else if(block[0] == "=") { // condition
+        // equals isn't that difficult to do,
+        // but there is one caveat:
+        // the equals block is polymorphic for numbers and strings
+        // unfortunately, this means we have to fetch the arguments as strings
+        // (worst case first mentality, perhaps)
+
+        var argument0 = compileBlock(block[1], "i8*");
+        var argument1 = compileBlock(block[2], "i8*");
+
+        // so, we check the types to see if we *actually* have to use slow string ops
+
+        if(argument0[1] == "i8*" || argument1[1] == "i8*") {
+            // ugh.. to the type coercer it is
+            // TODO: implement this
+            console.error("String comparison not implemented yet");
+            process.exit(0);
+        } else if(argument0[1] == "double" && argument1[1] == "double") {
+            // yay! we can use a native fcmp and be on our way!
+            // TODO: research the behaviour of fcmp when one or both of the arguments is NaN
+
+            var outputReg = newRegister();
+            emit(outputReg + " = fcmp ueq double " + argument0[0] + ", "+ argument1[0]);
+            return outputReg;
+        } else {
+            // this isn't possible...?
+
+            console.error("Unknown type configuration for compare:");
+            console.error(argument0);
+            console.error(argument1);
+
+            process.exit(0);
+        }
+
+        console.log(block);
         return "1"; // TODO: implement conditionals
     } else if(Array.isArray(block) && ['+', '-', '*', '/'].indexOf(block[0]) > -1) { // addition
         // recursively get arguments
