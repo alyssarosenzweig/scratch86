@@ -199,7 +199,7 @@ function compileBlock(block, expectedType) {
 
         // emit a branch
 
-        emit("br i1 " + condition + ", label " + path1Label + ", label " + path2Label);
+        emit("br i1 " + condition[0] + ", label " + path1Label + ", label " + path2Label);
 
         // and finally, just dump the two blocks independantly :)
 
@@ -236,19 +236,15 @@ function compileBlock(block, expectedType) {
             // strcmp will return 0 if the strings are equal
             // so we check for that :)
             
-            // as it turns out, strcmp is backwards compared to Scratch
-            // so here's our very WAT worthy lookup table
-
             var operation = ({
                 "=": "eq",
-                ">": "ult",
-                "<": "ugt"
+                ">": "ugt",
+                "<": "ult"
             })[block[0]];
 
             var output = newRegister();
             emit(output + " = icmp " + operation + " i32 0, " + strcmped);
-
-            return output;
+            return [output, "i1"];
         } else if(argument0[1] == "double" && argument1[1] == "double") {
             // yay! we can use a native fcmp and be on our way!
             // TODO: research the behaviour of fcmp when one or both of the arguments is NaN
@@ -264,7 +260,7 @@ function compileBlock(block, expectedType) {
 
             var outputReg = newRegister();
             emit(outputReg + " = fcmp " + operation + " double " + argument0[0] + ", "+ argument1[0]);
-            return outputReg;
+            return [outputReg, "i1"];
         } else {
             // this isn't possible...?
 
@@ -275,8 +271,16 @@ function compileBlock(block, expectedType) {
             process.exit(0);
         }
 
-        console.log(block);
-        return "1"; // TODO: implement conditionals
+    } else if(block[0] == "not") {
+        // LLVM doesn't actually support a not instruction,
+        // which makes no sense to me, but.. whatever
+        // you just do an XOR with (2^n - 1)
+
+        var arg = compileBlock(block[1]);
+
+        var output = newRegister();
+        emit(output + " = xor i1 true, " + arg[0] );
+        return [output, "i1"];
     } else if(Array.isArray(block) && ['+', '-', '*', '/'].indexOf(block[0]) > -1) { // addition
         // recursively get arguments
         console.log("blag");
