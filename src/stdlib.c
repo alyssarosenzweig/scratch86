@@ -7,6 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <SDL.h>
 
 // VisibleObject
 // general structure for anything visible on screen
@@ -33,12 +36,12 @@
 enum ObjectType {
     STAGE = 0,
     SPRITE = 128,
-    CLONE = 129
+    CLONE = 129,
     VARIABLE_WATCHER = 256,
     LIST_WATCHER = 257,
 };
 
-typedef struct {
+typedef struct VisibleObject_s {
     bool isVisible;
     enum ObjectType type;
 
@@ -49,7 +52,7 @@ typedef struct {
 
     uint32_t class;
 
-    VisibleObject* nextObject;
+    struct VisibleObject_s* nextObject;
 } VisibleObject;
 
 
@@ -81,6 +84,14 @@ VisibleObject* objectList;
 // also dynamically resizable
 // the backend will generate definitions to populate this
 VisibleClass** classList;
+
+// ScratchRenderStage does just what its name implies:
+// it traverse the objectList and renders anything that's not hidden
+// this is called as part of the SDL event loop
+
+void ScratchRenderStage() {
+
+}
 
 // sdtoa - Scratch double to ASCII
 // dtoa wrapper
