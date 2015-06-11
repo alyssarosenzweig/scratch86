@@ -205,14 +205,14 @@ function compileBlock(block, expectedType) {
 
         emitRawBlock(path1);
         emitRawBlock(path2);
-    } else if(block[0] == "=") { // condition
-        // equals isn't that difficult to do,
+    } else if(block[0] == "=" || block[0] == ">" || block[0] == "<") { // condition
+        // conditions aren't that difficult to do,
         // but there is one caveat:
-        // the equals block is polymorphic for numbers and strings
+        // these blocks are polymorphic for numbers and strings
         // unfortunately, this means we have to fetch the arguments as strings
         // (worst case first mentality, perhaps)
 
-        var argument0 = compileBlock(block[1], "i8*");
+               var argument0 = compileBlock(block[1], "i8*");
         var argument1 = compileBlock(block[2], "i8*");
 
         // so, we check the types to see if we *actually* have to use slow string ops
@@ -236,16 +236,34 @@ function compileBlock(block, expectedType) {
             // strcmp will return 0 if the strings are equal
             // so we check for that :)
             
+            // as it turns out, strcmp is backwards compared to Scratch
+            // so here's our very WAT worthy lookup table
+
+            var operation = ({
+                "=": "eq",
+                ">": "ult",
+                "<": "ugt"
+            })[block[0]];
+
             var output = newRegister();
-            emit(output + " = icmp eq i32 0, " + strcmped);
+            emit(output + " = icmp " + operation + " i32 0, " + strcmped);
 
             return output;
         } else if(argument0[1] == "double" && argument1[1] == "double") {
             // yay! we can use a native fcmp and be on our way!
             // TODO: research the behaviour of fcmp when one or both of the arguments is NaN
+        
+            // first things first, generalize the block spec to be DRY <3
+        
+            var operation = ({
+                "=": "ueq",
+                ">": "ugt",
+                "<": "ult"
+            })[block[0]];
+
 
             var outputReg = newRegister();
-            emit(outputReg + " = fcmp ueq double " + argument0[0] + ", "+ argument1[0]);
+            emit(outputReg + " = fcmp " + operation + " double " + argument0[0] + ", "+ argument1[0]);
             return outputReg;
         } else {
             // this isn't possible...?
