@@ -582,7 +582,6 @@ module.exports = function(project, output) {
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
-                    "%struct.VisibleObject = type { i32, i32, }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +

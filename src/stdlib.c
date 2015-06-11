@@ -52,6 +52,36 @@ typedef struct {
     VisibleObject* nextObject;
 } VisibleObject;
 
+
+// we use casts for this:
+// yay polymorphism!
+
+typedef struct {
+    enum ObjectType type;
+} VisibleClass;
+
+typedef struct {
+    enum ObjectType type;
+
+    // two pointers:
+    // one for a dynamically resizable array,
+    // the other because of SDL itself
+
+    SDL_Surface** costumes;
+} VisibleClass_Sprite;
+
+typedef struct {
+    enum ObjectType type;
+    SDL_Surface** backgrounds;
+} VisibleClass_Stage;
+
+// linked list
+VisibleObject* objectList;
+
+// also dynamically resizable
+// the backend will generate definitions to populate this
+VisibleClass** classList;
+
 // sdtoa - Scratch double to ASCII
 // dtoa wrapper
 // TODO: REMEMBER TO FREE MEMORY
