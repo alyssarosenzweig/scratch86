@@ -85,12 +85,15 @@ VisibleObject* objectList;
 // the backend will generate definitions to populate this
 VisibleClass** classList;
 
+// global SDL context
+SDL_Window* window;
+
 void ScratchInitialize() {
     // intiialize SDL
     SDL_Init(SDL_INIT_VIDEO);
 
     // make a window
-    SDL_Window *window = 
+    window = 
         SDL_CreateWindow(
             "scratch86 Project", 
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
@@ -103,9 +106,9 @@ void ScratchInitialize() {
         exit(1);
     }
 
-    // just to test SDL :)
+}
 
-    SDL_Delay(3000);
+void ScratchDestroy() {
     SDL_DestroyWindow(window);
     SDL_Quit();
 }

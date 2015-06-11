@@ -581,6 +581,7 @@ module.exports = function(project, output) {
                     "declare void @puts(i8*)\n" + 
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "declare void @ScratchInitialize()\n" + 
+                    "declare void @ScratchDestroy()\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
@@ -588,6 +589,7 @@ module.exports = function(project, output) {
                     "define i32 @main() {\n" +
                     "   call void @ScratchInitialize()\n" +
                     "   call void @whenGreenFlag0()\n" +
+                    "   call void @ScratchDestroy()\n" +
                     "   ret i32 0\n" +
                     "}\n\n";
 
