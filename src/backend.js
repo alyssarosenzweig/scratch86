@@ -281,6 +281,18 @@ function compileBlock(block, expectedType) {
         var output = newRegister();
         emit(output + " = xor i1 true, " + arg[0] );
         return [output, "i1"];
+    } else if(block[0] == "&" || block[0] == "|") {
+        // these blocks are pretty straight forward to implement
+        // compute the two conditions seperately, and apply a bitwise transform on them to get the combined value
+
+        var arg1 = compileBlock(block[1]);
+        var arg2 = compileBlock(block[2]);
+
+        var op = block[0] == "&" ? "and" : "or";
+
+        var output = newRegister();
+        emit(output + " = " + op + " i1 " + arg1[0] + ", " + arg2[0]);
+        return [output, "i1"];
     } else if(Array.isArray(block) && ['+', '-', '*', '/'].indexOf(block[0]) > -1) { // addition
         // recursively get arguments
         console.log("blag");
