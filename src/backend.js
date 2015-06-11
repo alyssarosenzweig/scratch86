@@ -205,6 +205,17 @@ function compileBlock(block, expectedType) {
 
         emitRawBlock(path1);
         emitRawBlock(path2);
+    } else if(block[0] == "doForever") {
+        // forever is.. ah.. very trivial <3
+
+        var label = newRegister();
+        emit("br label " + label);
+        
+        block[1].forEach(function(block_) {
+            compileBlock(block_, "void");
+        });
+
+        emit("br label " + label); 
     } else if(block[0] == "=" || block[0] == ">" || block[0] == "<") { // condition
         // conditions aren't that difficult to do,
         // but there is one caveat:
