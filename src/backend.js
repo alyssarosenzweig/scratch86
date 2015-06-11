@@ -7,19 +7,58 @@
 
 var fs = require("fs");
 
-var LLVMOut = [];
 var indentStatus = 0;
 var globalDefinitions = [];
 
-function emit(line, indentation) {
-    if(indentation < 0) indentStatus += indentation;
-    
-    var out = "";
-    for(var i = 0; i < indentStatus; ++i) out += "    ";
-    
-    LLVMOut.push( out + line );
+// different code contexts will generate code at different times,
+// which would normally be ridiculluous hard to implement correctly,
+// but we can actually just emit code blocks to a temporary stack instead
 
-    if(indentation > 0) indentStatus += indentation;
+var LLVMOutStack = [
+    { indentStatus: 0, block: [] }
+];
+
+function emit(line, indentation) {
+    var ctx = LLVMOutStack[LLVMOutStack.length - 1];
+  
+    if(indentation < 0) {
+        ctx.indentStatus += indentation;
+    }
+
+    var out = "";
+    for(var i = 0; i < ctx.indentStatus; ++i) out += "    ";
+    
+    ctx.block.push( out + line );
+    
+    if(indentation > 0) {
+        ctx.indentStatus += indentation;
+    }
+}
+
+function beginEmissionBlock() {
+    LLVMOutStack.push(
+            {
+                indentStatus: LLVMOutStack[LLVMOutStack.length - 1].indentStatus,
+                block: []
+            }
+    );
+}
+
+// a raw block is the output of collapseEmissionBlock
+// a.k.a the data structure listed above
+// emitRawBlock is intended to be called sometime after a raw block is collapsed
+
+function emitRawBlock(raw) {
+    var ctx = LLVMOutStack[LLVMOutStack.length - 1];
+
+    ctx.block = ctx.block.concat(raw.block);
+}
+
+// TODO: send upstream if necessary
+// I haven't yet determined if this is necessary, so..
+
+function collapseEmissionBlock() {
+    return LLVMOutStack.pop();
 }
 
 var functionCounter = 0; // TODO: infer legitimate names for scripts
@@ -115,6 +154,59 @@ function compileBlock(block, expectedType) {
         var stringified = staticCast(argument[0], argument[1], "i8*");
 
         emit("call void @puts(i8* " + stringified + ")");
+    } else if(block[0] == "doIfElse") {
+        // if-else is trivial to map to LLVM
+        // evaluate the condition, pass it into a br, and that's it :)
+        // the only caveat is that we can only compute the labels retroactively
+        // so we set emission flags so we can compile the inside bits AOT
+       
+        // compile the condition
+        var condition = compileBlock(block[1], "i1"); // i1 == condition
+
+        // compile each codepath, seperately, in their own emission block
+        // it is important to note that this will NOT be collapsed onto the main LLVMOut
+        // we leave it for ourselves to do this :)
+        
+        var path1Label = newRegister();
+        beginEmissionBlock();
+        
+        block[2].forEach(function(block_) {
+            compileBlock(block_, "void");
+        });
+        
+        var path1 = collapseEmissionBlock();
+
+        
+        var path2Label = newRegister();
+        beginEmissionBlock();
+        
+        block[3].forEach(function(block_) {
+            compileBlock(block_, "void");
+        });
+
+        var path2 = collapseEmissionBlock();
+
+        // the output label will be here:
+        var result = newRegister();
+
+        // and we now retroactively need to add an unconditional branch
+        
+        // TODO: adding a terminator to an old emission block is pretty common
+        // make this more DRY, please :)
+
+        path1.block.push("  br label " + result);
+        path2.block.push("  br label " + result);
+
+        // emit a branch
+
+        emit("br i1 " + condition + ", label " + path1Label + ", label " + path2Label);
+
+        // and finally, just dump the two blocks independantly :)
+
+        emitRawBlock(path1);
+        emitRawBlock(path2);
+    } else if(block[0] == "=") { // condition
+        return "1"; // TODO: implement conditionals
     } else if(Array.isArray(block) && ['+', '-', '*', '/'].indexOf(block[0]) > -1) { // addition
         // recursively get arguments
         console.log("blag");
@@ -408,7 +500,7 @@ module.exports = function(project, output) {
                     "   ret i32 0\n" +
                     "}\n\n";
 
-    fs.writeFile(output, preamble + LLVMOut.join("\n") + "\n\n"); 
+    fs.writeFile(output, preamble + LLVMOutStack[0].block.join("\n") + "\n\n"); 
 
     console.log("Backend stub");
 }
