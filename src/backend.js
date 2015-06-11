@@ -580,11 +580,13 @@ module.exports = function(project, output) {
                     "declare i8* @sdtoa(double)\n" + 
                     "declare void @puts(i8*)\n" + 
                     "declare i32 @strcmp(i8*, i8*)\n" + 
+                    "declare void @ScratchInitialize()\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +
+                    "   call void @ScratchInitialize()\n" +
                     "   call void @whenGreenFlag0()\n" +
                     "   ret i32 0\n" +
                     "}\n\n";

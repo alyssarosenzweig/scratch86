@@ -85,12 +85,46 @@ VisibleObject* objectList;
 // the backend will generate definitions to populate this
 VisibleClass** classList;
 
+void ScratchInitialize() {
+    // intiialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // make a window
+    SDL_Window *window = 
+        SDL_CreateWindow(
+            "scratch86 Project", 
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
+            480, 360, 
+            SDL_WINDOW_OPENGL
+        );
+
+    if(window == NULL) {
+        printf("Bah! SDL error: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    // just to test SDL :)
+
+    SDL_Delay(3000);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
 // ScratchRenderStage does just what its name implies:
 // it traverse the objectList and renders anything that's not hidden
 // this is called as part of the SDL event loop
 
 void ScratchRenderStage() {
+    // iterate through the linked list
+    // TODO: integrate with SDL
 
+    VisibleObject* currentObject = objectList;
+    
+    while(currentObject != NULL) {
+        printf("%d: (%f,%f)", currentObject->class, currentObject->x, currentObject->y);
+
+        currentObject = currentObject->nextObject;
+    }
 }
 
 // sdtoa - Scratch double to ASCII
