@@ -218,10 +218,28 @@ function compileBlock(block, expectedType) {
         // so, we check the types to see if we *actually* have to use slow string ops
 
         if(argument0[1] == "i8*" || argument1[1] == "i8*") {
-            // ugh.. to the type coercer it is
-            // TODO: implement this
-            console.error("String comparison not implemented yet");
-            process.exit(0);
+            // ugh.. to high-level C stdlib it is
+
+            // it's possible that one, but not both of these arguments is a string
+            // in that case, we have to.. ugh.. render it as a string
+            // alternatively, we could parse the other one, but that doesn't make a lot of sense compile time :(
+
+            var string0 = staticCast(argument0[0], argument0[1], "i8*");
+            var string1 = staticCast(argument1[0], argument1[1], "i8*");
+
+            // we now call strcmp on the arguments
+            // TODO: research if it is more accurate / safe to use strncmp instead
+            
+            var strcmped = newRegister();
+            emit(strcmped+ " = call i32 @strcmp(i8* " + string0 + ", i8* " + string1 + ")");
+
+            // strcmp will return 0 if the strings are equal
+            // so we check for that :)
+            
+            var output = newRegister();
+            emit(output + " = icmp eq i32 0, " + strcmped);
+
+            return output;
         } else if(argument0[1] == "double" && argument1[1] == "double") {
             // yay! we can use a native fcmp and be on our way!
             // TODO: research the behaviour of fcmp when one or both of the arguments is NaN
@@ -523,8 +541,9 @@ module.exports = function(project, output) {
 
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
-                    "declare void @puts(i8*)\n" + 
                     "declare i8* @sdtoa(double)\n" + 
+                    "declare void @puts(i8*)\n" + 
+                    "declare i32 @strcmp(i8*, i8*)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
