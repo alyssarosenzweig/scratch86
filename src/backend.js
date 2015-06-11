@@ -567,6 +567,8 @@ module.exports = function(project, output) {
     // }
     //
     // enum VariableType { string_type, double_type }
+    
+    // see the stdlib source code for the VisibleObject struct
 
     // do note that VariableType is at the end of the struct,
     // and that the other fields follow the order from the enum.
@@ -580,6 +582,7 @@ module.exports = function(project, output) {
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
+                    "%struct.VisibleObject = type { i32, i32, }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +
                     "define i32 @main() {\n" +
