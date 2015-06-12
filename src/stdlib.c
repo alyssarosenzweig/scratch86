@@ -67,11 +67,13 @@ void setY(VisibleObject* obj, double y) { obj->y = y; }
 
 typedef struct {
     enum ObjectType type;
+    VisibleObject* mainObject;
 } VisibleClass;
 
 typedef struct {
     enum ObjectType type;
-
+    VisibleObject* mainObject;
+    
     // two pointers:
     // one for a dynamically resizable array,
     // the other because of SDL itself
@@ -82,6 +84,7 @@ typedef struct {
 
 typedef struct {
     enum ObjectType type;
+    VisibleObject* mainObject;
 
     SDL_Surface** backgrounds;
     int backgroundCount;
@@ -109,24 +112,27 @@ int STAGE_WIDTH = 480,
 typedef void (*Script)(VisibleObject*);
 
 Script* greenFlagScripts;
+uint32_t *greenFlagClasses;
 int greenFlagScriptCount;
 int gfscs = 0;
 
 void greenFlagClicked();
-void callScript(Script s);
+void callScript(Script s, VisibleObject* obj);
 
 void setEventCount(int eventType, int count) {
     if(eventType == 1) {
         greenFlagScriptCount = count;
         greenFlagScripts = malloc(sizeof(Script) * count);
+        greenFlagClasses = malloc(sizeof(uint32_t) * count);
     }
 }
 
-void registerEvent(int eventType, Script s) {
+void registerEvent(int eventType, Script s, uint32_t classId) {
     if(eventType == 1) {
         // greenFlag
 
-        greenFlagScripts[gfscs++] = s;
+        greenFlagScripts[gfscs] = s;
+        greenFlagClasses[gfscs++] = classId;
     }
 }
 
@@ -230,7 +236,7 @@ void greenFlagClicked() {
         // to the pthread's!
         // TODO: windows support
 
-        callScript(s);
+        callScript(s, classList[ greenFlagClasses[i] ]->mainObject);
 
         ++i;
     }
@@ -239,9 +245,9 @@ void greenFlagClicked() {
 // threading-based Script call
 // TODO: windows macro shim
 
-void callScript(Script s) {
+void callScript(Script s, VisibleObject* obj) {
     pthread_t thread;
-    pthread_create(&thread, NULL, s, NULL);
+    pthread_create(&thread, NULL, s, obj);
 }
 
 // ScratchRenderStage does just what its name implies:
@@ -290,6 +296,12 @@ void newVisibleObject(bool isVisible, enum ObjectType type, double x, double y, 
     } else {
         objectList = obj;
     }
+
+    // record us as pioneers if that's what we are...
+    // <3 excessive useless word choice
+    
+    if(!classList[class]->mainObject)
+        classList[class]->mainObject = obj;
 }
 
 // sdtoa - Scratch double to ASCII

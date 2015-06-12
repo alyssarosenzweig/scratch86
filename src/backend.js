@@ -533,7 +533,7 @@ function processScript(context, script) {
 
     if(hatBlock[0] == "whenGreenFlag") {
         fnName = "greenFlag" + (functionCounter++);
-        eventDefinitions.push("    call void @registerEvent(i32 1, void (i8*)* @"+ fnName + ")");
+        eventDefinitions.push("    call void @registerEvent(i32 1, void (i8*)* @"+ fnName + ", i32 " + context["86"].classId + ")");
 
         greenFlagCount++;
     } else {
@@ -598,6 +598,8 @@ function processChild(child) {
     var costumeArr = newString();
 
     globalDefinitions.push("    " + costumeArr + " = internal constant [ " + costumeStrings.length + " x i8*] [" + costumeStrings.join(", ") + "], align 16");
+
+    child["86"].classId = classDefinitions.length;
 
     classDefinitions.push("    call void @registerSpriteClass(i8** getelementptr inbounds ([ " + costumeStrings.length + " x i8*]* " + costumeArr + ", i32 0, i32 0), i32 " + costumeStrings.length + ")");
 
@@ -677,7 +679,7 @@ module.exports = function(project, output) {
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "declare void @ScratchInitialize()\n" + 
                     "declare void @ScratchDestroy()\n" + 
-                    "declare void @registerEvent(i32, void (i8*)*)\n" + 
+                    "declare void @registerEvent(i32, void (i8*)*, i32)\n" + 
                     "declare void @registerSpriteClass(i8**, i32)\n" + 
                     "declare void @setEventCount(i32, i32)\n" + 
                     "declare void @setClassCount(i32)\n" + 
