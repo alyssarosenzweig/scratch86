@@ -244,17 +244,20 @@ void ScratchRenderStage() {
     // iterate through the linked list
     // TODO: integrate with SDL
 
-    printf("Rendering...\n");
-
     VisibleObject* currentObject = objectList;
     
     while(currentObject != NULL) {
-        printf("%d: (%f,%f)", currentObject->class, currentObject->x, currentObject->y);
+        SDL_Rect location;
+
+        // TODO: scale X and Y to use Scratch's coordinate system instead of SDL's
+        
+        location.x = currentObject->x;
+        location.y = currentObject->y;
 
         SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[0],
                          NULL,
                          windowSurface,
-                         NULL );
+                         &location );
 
         currentObject = currentObject->nextObject;
     }

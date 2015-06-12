@@ -558,7 +558,7 @@ function processChild(child) {
     };
 
     var isVisible = true,
-        x = "0.0", y = "0.0",
+        x = "50.0", y = "50.0",
         rotation = "90.0",
         costumeNumber = 0,
         class_n = 0;
