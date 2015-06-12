@@ -96,6 +96,7 @@ int ccrs = 0;
 
 // global SDL context
 SDL_Window* window;
+SDL_Surface* windowSurface;
 
 typedef void (*Script)(void);
 
@@ -170,6 +171,8 @@ void ScratchInitialize() {
         exit(1);
     }
 
+    windowSurface = SDL_GetWindowSurface(window);
+
     // metaphorical clicking of the green flag
     greenFlagClicked();
 
@@ -194,6 +197,7 @@ void ScratchInitialize() {
 }
 
 void ScratchDestroy() {
+    SDL_FreeSurface(windowSurface);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
@@ -247,8 +251,15 @@ void ScratchRenderStage() {
     while(currentObject != NULL) {
         printf("%d: (%f,%f)", currentObject->class, currentObject->x, currentObject->y);
 
+        SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[0],
+                         NULL,
+                         windowSurface,
+                         NULL );
+
         currentObject = currentObject->nextObject;
     }
+
+    SDL_UpdateWindowSurface(window);
 }
 
 void newVisibleObject(bool isVisible, enum ObjectType type, double x, double y, double rotation, uint32_t costumeNumber, uint32_t class) {
