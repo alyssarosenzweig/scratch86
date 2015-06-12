@@ -16,6 +16,7 @@ var greenFlagCount = 0;
 var otherEventCount = 0;
 
 var visibleDefinitions = [];
+var classDefinitions = [];
 
 // different code contexts will generate code at different times,
 // which would normally be ridiculluous hard to implement correctly,
@@ -572,6 +573,25 @@ function processChild(child) {
     
     console.log(child);
 
+    // generate the required constants for the class
+
+    var costumeStrings = [];
+
+    costumeList.forEach(function(costume) {
+            var reg = newString();
+
+            globalDefinitions.push("    " + reg + " = private unnamed_addr constant [ " + (costume.length + 1) + " x i8] c\"" + costume + "\\00\", align 1");
+
+            costumeStrings.push("i8* getelementptr inbounds ([ " + (costume.length + 1) + " x i8]* " + reg + ", i32 0, i32 0)");
+    });
+
+    // generate the costume list constant array
+    var costumeArr = newString();
+
+    globalDefinitions.push("    " + costumeArr + " = internal constant [ " + costumeStrings.length + " x i8*] [" + costumeStrings.join(", ") + "], align 16");
+
+    classDefinitions.push("    call void @registerSpriteClass(i8** getelementptr inbounds ([ " + costumeStrings.length + " x i8*]* " + costumeArr + ", i32 0, i32 0), i32 " + costumeStrings.length + ")");
+
     visibleDefinitions.push("   call void @newVisibleObject(i1 zeroext " + isVisible + ", i32 128, double " + x + ", double " + y + ", double " + rotation + ", i32 " + costumeNumber + ", i32 " + class_n + ")");
 
     // sprites can have scripts
@@ -649,7 +669,9 @@ module.exports = function(project, output) {
                     "declare void @ScratchInitialize()\n" + 
                     "declare void @ScratchDestroy()\n" + 
                     "declare void @registerEvent(i32, void ()*)\n" + 
+                    "declare void @registerSpriteClass(i8**, i32)\n" + 
                     "declare void @setEventCount(i32, i32)\n" + 
+                    "declare void @setClassCount(i32)\n" + 
                     "declare void @newVisibleObject(i1 zeroext, i32, double, double, double, i32, i32)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
@@ -657,7 +679,9 @@ module.exports = function(project, output) {
                     "\n" +
                     "define i32 @main() {\n" +
                     "   call void @setEventCount(i32 1, i32 " + greenFlagCount + ")\n" +
-                    (eventDefinitions.join("\n")) +
+                    (eventDefinitions.join("\n")) + "\n" +
+                    "   call void @setClassCount(i32 " + classDefinitions.length + ")\n" +
+                    (classDefinitions.join("\n")) + "\n" +
                     (visibleDefinitions.join("\n")) +
                     "\n"+
                     "   call void @ScratchInitialize()\n" +

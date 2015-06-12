@@ -40,7 +40,7 @@ function fetchPNG(md5, callback) {
         }
     });
 
-    return (md5.slice(-4 == ".png")) ? md5 : md5.slice(0, -4) + ".png";
+    return (md5.slice(-4) == ".png") ? md5 : md5.slice(0, -4) + ".png";
 }
 
 module.exports.pull = pull;

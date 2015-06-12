@@ -9,7 +9,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#include <pthread.h>
+
 #include <SDL.h>
+#include <SDL_image.h>
 
 // VisibleObject
 // general structure for anything visible on screen
@@ -71,11 +75,14 @@ typedef struct {
     // the other because of SDL itself
 
     SDL_Surface** costumes;
+    int costumeCount;
 } VisibleClass_Sprite;
 
 typedef struct {
     enum ObjectType type;
+
     SDL_Surface** backgrounds;
+    int backgroundCount;
 } VisibleClass_Stage;
 
 // linked list
@@ -84,6 +91,8 @@ VisibleObject* objectList;
 // also dynamically resizable
 // the backend will generate definitions to populate this
 VisibleClass** classList;
+int classCount = 0;
+int ccrs = 0;
 
 // global SDL context
 SDL_Window* window;
@@ -110,6 +119,35 @@ void registerEvent(int eventType, Script s) {
 
         greenFlagScripts[gfscs++] = s;
     }
+}
+
+// TODO: more properties of sprites
+
+void setClassCount(int count) {
+    classCount = count;
+    classList = malloc(sizeof(VisibleClass*) * count);
+}
+
+void registerSpriteClass(const char* const costumes[], int costumeCount) {
+    VisibleClass_Sprite* cls = malloc(sizeof(VisibleClass_Sprite*));
+    cls->type = SPRITE;
+
+    cls->costumeCount = costumeCount;
+    cls->costumes = malloc(costumeCount * sizeof(SDL_Surface*));
+
+    while(costumeCount--) {
+        SDL_Surface *image = IMG_Load(costumes[costumeCount]);
+
+        if(!image) {
+            printf("Load error: %s\n", IMG_GetError());
+            printf("Image: %s\n", costumes[costumeCount]);
+            exit(0);
+        }
+
+        cls->costumes[costumeCount] = image;
+    }
+
+    classList[ccrs++] = (VisibleClass*) cls; 
 }
 
 void ScratchRenderStage();
