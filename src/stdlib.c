@@ -59,6 +59,8 @@ typedef struct VisibleObject_s {
     struct VisibleObject_s* nextObject;
 } VisibleObject;
 
+void setX(VisibleObject* obj, double x) { obj->x = x; }
+void setY(VisibleObject* obj, double y) { obj->y = y; }
 
 // we use casts for this:
 // yay polymorphism!
@@ -104,7 +106,7 @@ int STAGE_WIDTH = 480,
 #define SCALE_SCRATCH_X(x) (( (x+240) / 480) * STAGE_WIDTH)
 #define SCALE_SCRATCH_Y(y) (( (180-y) / 360) * STAGE_HEIGHT)
 
-typedef void (*Script)(void);
+typedef void (*Script)(VisibleObject*);
 
 Script* greenFlagScripts;
 int greenFlagScriptCount;

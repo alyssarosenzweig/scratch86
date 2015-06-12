@@ -449,6 +449,15 @@ function compileBlock(block, expectedType) {
         // that's all we need to know to return!
 
        return [outputRegister, acceptableTypes[0]]; 
+    } else if(block[0] == "xpos:" || block[0] == "ypos:") {
+        // X and Y are doubles stored in the Sprite object
+        // so we cast our argument, perform a low level store in LLVM,
+        // and that's it
+        
+        var argument = compileBlock(block[1], "double");
+        var doubled = staticCast(argument[0], argument[1], "double");
+
+        emit("call void @set" + (block[0][0].toUpperCase()) + "(i8* %this, double " + doubled + ")");
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
@@ -524,7 +533,7 @@ function processScript(context, script) {
 
     if(hatBlock[0] == "whenGreenFlag") {
         fnName = "greenFlag" + (functionCounter++);
-        eventDefinitions.push("    call void @registerEvent(i32 1, void ()* @"+ fnName + ")");
+        eventDefinitions.push("    call void @registerEvent(i32 1, void (i8*)* @"+ fnName + ")");
 
         greenFlagCount++;
     } else {
@@ -534,7 +543,7 @@ function processScript(context, script) {
         process.exit(0);
     }
 
-    emit("define void @" + fnName + "() {", 1);
+    emit("define void @" + fnName + "(i8* %this) {", 1);
 
     // for each block in the script, compile it!
     
@@ -558,7 +567,7 @@ function processChild(child) {
     };
 
     var isVisible = true,
-        x = "50.0", y = "50.0",
+        x = "0.0", y = "0.0",
         rotation = "90.0",
         costumeNumber = 0,
         class_n = 0;
@@ -668,11 +677,14 @@ module.exports = function(project, output) {
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "declare void @ScratchInitialize()\n" + 
                     "declare void @ScratchDestroy()\n" + 
-                    "declare void @registerEvent(i32, void ()*)\n" + 
+                    "declare void @registerEvent(i32, void (i8*)*)\n" + 
                     "declare void @registerSpriteClass(i8**, i32)\n" + 
                     "declare void @setEventCount(i32, i32)\n" + 
                     "declare void @setClassCount(i32)\n" + 
                     "declare void @newVisibleObject(i1 zeroext, i32, double, double, double, i32, i32)\n" + 
+                    "\n" +
+                    "declare void @setX(i8*, double)\n" +
+                    "declare void @setY(i8*, double)\n" +
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
