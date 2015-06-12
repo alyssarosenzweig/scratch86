@@ -137,7 +137,15 @@ void ScratchInitialize() {
     // all of the computation is in pthreads
     // TODO: event loop here?
 
-    for(;;);
+    SDL_Event e;
+
+    for(;;) {
+        if(SDL_WaitEvent(&e)) {
+            if(e.type == SDL_QUIT) {
+                return;
+            }
+        }
+    }
 }
 
 void ScratchDestroy() {
