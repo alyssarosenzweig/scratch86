@@ -6,6 +6,7 @@
  */
 
 var fs = require("fs");
+var fetchPNG = require("./ScratchAPI").fetchPNG;
 
 var indentStatus = 0;
 var globalDefinitions = [];
@@ -560,7 +561,17 @@ function processChild(child) {
         rotation = "90.0",
         costumeNumber = 0,
         class_n = 0;
-   
+  
+    var costumeList = [];
+
+    if(typeof child.costumes !== 'undefined') {
+        child.costumes.forEach(function(costume) {
+            costumeList.push(fetchPNG(costume.baseLayerMD5));
+        });
+    }
+    
+    console.log(child);
+
     visibleDefinitions.push("   call void @newVisibleObject(i1 zeroext " + isVisible + ", i32 128, double " + x + ", double " + y + ", double " + rotation + ", i32 " + costumeNumber + ", i32 " + class_n + ")");
 
     // sprites can have scripts

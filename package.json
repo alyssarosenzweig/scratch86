@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "minimist": "1.1.1",
-    "request": "2.57.0"
+    "request": "2.57.0",
+    "svg2png": "1.1.1"
   },
   "keywords": [
     "compiler",

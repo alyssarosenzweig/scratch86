@@ -5,6 +5,8 @@
  */
 
 var request = require("request");
+var svg2png = require("svg2png");
+var fs = require("fs");
 
 /*
  * pull - pulls a project of the website
@@ -21,4 +23,25 @@ function pull(projectID, callback) {
     });
 }
 
+// I feel sad about using highly nested callbacks :(
+
+function fetchPNG(md5, callback) {
+    request("http://cdn.scratch.mit.edu/internalapi/asset/" + md5 + "/get/", function(err, resp, body) {
+        if(md5.slice(-4) == ".png") {
+            fs.writeFile(md5, body, function() {
+                callback(md5);
+            });
+        } else if(md5.slice(-4) == ".svg") {
+            fs.writeFile(md5, body, function() {
+                svg2png(md5, md5.slice(0, -4) + ".png", function(err) {
+                    if(callback) callback(md5.slice(0, -4) + ".png");
+                });
+            });
+        }
+    });
+
+    return (md5.slice(-4 == ".png")) ? md5 : md5.slice(0, -4) + ".png";
+}
+
 module.exports.pull = pull;
+module.exports.fetchPNG = fetchPNG;
