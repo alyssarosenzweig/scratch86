@@ -98,6 +98,12 @@ int ccrs = 0;
 SDL_Window* window;
 SDL_Surface* windowSurface;
 
+int STAGE_WIDTH = 480,
+    STAGE_HEIGHT = 360;
+
+#define SCALE_SCRATCH_X(x) (( (x+240) / 480) * STAGE_WIDTH)
+#define SCALE_SCRATCH_Y(y) (( (180-y) / 360) * STAGE_HEIGHT)
+
 typedef void (*Script)(void);
 
 Script* greenFlagScripts;
@@ -162,7 +168,7 @@ void ScratchInitialize() {
         SDL_CreateWindow(
             "scratch86 Project", 
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
-            480, 360, 
+            STAGE_WIDTH, STAGE_HEIGHT, 
             SDL_WINDOW_OPENGL
         );
 
@@ -251,8 +257,8 @@ void ScratchRenderStage() {
 
         // TODO: scale X and Y to use Scratch's coordinate system instead of SDL's
         
-        location.x = currentObject->x;
-        location.y = currentObject->y;
+        location.x = SCALE_SCRATCH_X(currentObject->x);
+        location.y = SCALE_SCRATCH_Y(currentObject->y);
 
         SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[0],
                          NULL,
