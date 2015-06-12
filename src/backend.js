@@ -14,6 +14,8 @@ var eventDefinitions = [];
 var greenFlagCount = 0;
 var otherEventCount = 0;
 
+var visibleDefinitions = [];
+
 // different code contexts will generate code at different times,
 // which would normally be ridiculluous hard to implement correctly,
 // but we can actually just emit code blocks to a temporary stack instead
@@ -158,6 +160,16 @@ function compileBlock(block, expectedType) {
         var stringified = staticCast(argument[0], argument[1], "i8*");
 
         emit("call void @puts(i8* " + stringified + ")");
+    } else if(block[0] == "wait:elapsed:from:") {
+        // sleep :)
+
+        var arg = compileBlock(block[1], "i32");
+        var i32ified = staticCast(arg[0], arg[1], "i32");
+
+        // TODO: deal with usleep, nanosleep, POSIX, and windows...
+        // this breaks for noninteger values :(
+
+        emit("call void @sleep(i32 " + i32ified + ")");
     } else if(block[0] == "doIfElse") {
         // if-else is trivial to map to LLVM
         // evaluate the condition, pass it into a br, and that's it :)
@@ -542,7 +554,15 @@ function processChild(child) {
     child["86"] = {
         type: "sprite"
     };
-    
+
+    var isVisible = true,
+        x = "0.0", y = "0.0",
+        rotation = "90.0",
+        costumeNumber = 0,
+        class_n = 0;
+   
+    visibleDefinitions.push("   call void @newVisibleObject(i1 zeroext " + isVisible + ", i32 128, double " + x + ", double " + y + ", double " + rotation + ", i32 " + costumeNumber + ", i32 " + class_n + ")");
+
     // sprites can have scripts
     // process those seperately
 
@@ -611,6 +631,7 @@ module.exports = function(project, output) {
 
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
+                    "declare void @sleep(i32)\n" + 
                     "declare i8* @sdtoa(double)\n" + 
                     "declare void @puts(i8*)\n" + 
                     "declare i32 @strcmp(i8*, i8*)\n" + 
@@ -618,6 +639,7 @@ module.exports = function(project, output) {
                     "declare void @ScratchDestroy()\n" + 
                     "declare void @registerEvent(i32, void ()*)\n" + 
                     "declare void @setEventCount(i32, i32)\n" + 
+                    "declare void @newVisibleObject(i1 zeroext, i32, double, double, double, i32, i32)\n" + 
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
@@ -625,6 +647,7 @@ module.exports = function(project, output) {
                     "define i32 @main() {\n" +
                     "   call void @setEventCount(i32 1, i32 " + greenFlagCount + ")\n" +
                     (eventDefinitions.join("\n")) +
+                    (visibleDefinitions.join("\n")) +
                     "\n"+
                     "   call void @ScratchInitialize()\n" +
                     "   call void @ScratchDestroy()\n" +

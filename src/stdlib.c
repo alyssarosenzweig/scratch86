@@ -112,6 +112,8 @@ void registerEvent(int eventType, Script s) {
     }
 }
 
+void ScratchRenderStage();
+
 void ScratchInitialize() {
     // intiialize SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -140,11 +142,16 @@ void ScratchInitialize() {
     SDL_Event e;
 
     for(;;) {
-        if(SDL_WaitEvent(&e)) {
+        while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) {
                 return;
             }
         }
+
+        // render everything here
+
+        ScratchRenderStage();
+        SDL_Delay(20); // TODO: determine appropriate FPS for this
     }
 }
 
@@ -195,12 +202,33 @@ void ScratchRenderStage() {
     // iterate through the linked list
     // TODO: integrate with SDL
 
+    printf("Rendering...\n");
+
     VisibleObject* currentObject = objectList;
     
     while(currentObject != NULL) {
         printf("%d: (%f,%f)", currentObject->class, currentObject->x, currentObject->y);
 
         currentObject = currentObject->nextObject;
+    }
+}
+
+void newVisibleObject(bool isVisible, enum ObjectType type, double x, double y, double rotation, uint32_t costumeNumber, uint32_t class) {
+    VisibleObject* obj = malloc(sizeof(VisibleObject));
+    obj->isVisible = isVisible;
+    obj->type = type;
+    obj->x = x;
+    obj->y = y;
+    obj->rotation = rotation;
+    obj->costumeNumber = costumeNumber;
+    obj->class = class;
+
+    obj->nextObject = NULL; 
+
+    if(objectList) {
+        objectList->nextObject = obj;
+    } else {
+        objectList = obj;
     }
 }
 
