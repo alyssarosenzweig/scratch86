@@ -70,6 +70,11 @@ typedef struct {
 } VisibleClass;
 
 typedef struct {
+    double rotationCenterX;
+    double rotationCenterY;
+} CostumeMeta;
+
+typedef struct {
     enum ObjectType type;
     VisibleObject* mainObject;
     
@@ -78,6 +83,7 @@ typedef struct {
     // the other because of SDL itself
 
     SDL_Surface** costumes;
+    CostumeMeta* costumeMeta;
     int costumeCount;
 } VisibleClass_Sprite;
 
@@ -154,18 +160,17 @@ void setClassCount(int count) {
     classList = malloc(sizeof(VisibleClass*) * count);
 }
 
-void registerSpriteClass(const char* const costumes[], int costumeCount) {
-    VisibleClass_Sprite* cls = malloc(sizeof(VisibleClass_Sprite*));
+void registerSpriteClass(const char* const costumes[], const double rotX[], const double rotY[], int costumeCount) {
+    VisibleClass_Sprite* cls = malloc(sizeof(VisibleClass_Sprite));
     cls->type = SPRITE;
-
-    printf("Cls alloced\n");
 
     cls->costumeCount = costumeCount;
     cls->costumes = malloc(costumeCount * sizeof(SDL_Surface*));
-
-    printf("Cost alloced\n");
+    cls->costumeMeta = malloc(costumeCount * sizeof(CostumeMeta));
 
     while(costumeCount--) {
+        printf("Loading %s..\n", costumes[costumeCount]);
+        
         SDL_Surface *image = IMG_Load(costumes[costumeCount]);
 
         if(!image) {
@@ -175,6 +180,8 @@ void registerSpriteClass(const char* const costumes[], int costumeCount) {
         }
 
         cls->costumes[costumeCount] = image;
+        cls->costumeMeta[costumeCount].rotationCenterX = rotX[costumeCount];
+        cls->costumeMeta[costumeCount].rotationCenterY = rotY[costumeCount];
     }
 
     classList[ccrs++] = (VisibleClass*) cls; 
