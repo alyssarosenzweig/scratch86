@@ -109,7 +109,7 @@ int STAGE_WIDTH = 480,
 #define SCALE_SCRATCH_X(x) (( (x+240) / 480) * STAGE_WIDTH)
 #define SCALE_SCRATCH_Y(y) (( (180-y) / 360) * STAGE_HEIGHT)
 
-typedef void (*Script)(VisibleObject*);
+typedef void* (*Script)(void*);
 
 Script* greenFlagScripts;
 uint32_t *greenFlagClasses;
@@ -147,8 +147,12 @@ void registerSpriteClass(const char* const costumes[], int costumeCount) {
     VisibleClass_Sprite* cls = malloc(sizeof(VisibleClass_Sprite*));
     cls->type = SPRITE;
 
+    printf("Cls alloced\n");
+
     cls->costumeCount = costumeCount;
     cls->costumes = malloc(costumeCount * sizeof(SDL_Surface*));
+
+    printf("Cost alloced\n");
 
     while(costumeCount--) {
         SDL_Surface *image = IMG_Load(costumes[costumeCount]);

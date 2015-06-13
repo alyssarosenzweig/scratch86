@@ -563,7 +563,7 @@ function processChild(child) {
     // attach some metadata to tag the sprite
 
     child["86"] = {
-        type: "sprite"
+        type: typeof child.costumes !== 'undefined' ? "sprite" : "watcher"
     };
 
     var isVisible = true,
@@ -594,16 +594,18 @@ function processChild(child) {
             costumeStrings.push("i8* getelementptr inbounds ([ " + (costume.length + 1) + " x i8]* " + reg + ", i32 0, i32 0)");
     });
 
-    // generate the costume list constant array
-    var costumeArr = newString();
+    if(child["86"].type == "sprite") {
+        // generate the costume list constant array
+        var costumeArr = newString();
 
-    globalDefinitions.push("    " + costumeArr + " = internal constant [ " + costumeStrings.length + " x i8*] [" + costumeStrings.join(", ") + "], align 16");
+        globalDefinitions.push("    " + costumeArr + " = internal constant [ " + costumeStrings.length + " x i8*] [" + costumeStrings.join(", ") + "], align 16");
 
-    child["86"].classId = classDefinitions.length;
+        child["86"].classId = classDefinitions.length;
 
-    classDefinitions.push("    call void @registerSpriteClass(i8** getelementptr inbounds ([ " + costumeStrings.length + " x i8*]* " + costumeArr + ", i32 0, i32 0), i32 " + costumeStrings.length + ")");
+        classDefinitions.push("    call void @registerSpriteClass(i8** getelementptr inbounds ([ " + costumeStrings.length + " x i8*]* " + costumeArr + ", i32 0, i32 0), i32 " + costumeStrings.length + ")");
 
-    visibleDefinitions.push("   call void @newVisibleObject(i1 zeroext " + isVisible + ", i32 128, double " + x + ", double " + y + ", double " + rotation + ", i32 " + costumeNumber + ", i32 " + class_n + ")");
+        visibleDefinitions.push("   call void @newVisibleObject(i1 zeroext " + isVisible + ", i32 128, double " + x + ", double " + y + ", double " + rotation + ", i32 " + costumeNumber + ", i32 " + class_n + ")");
+    }
 
     // sprites can have scripts
     // process those seperately
