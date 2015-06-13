@@ -59,9 +59,6 @@ typedef struct VisibleObject_s {
     struct VisibleObject_s* nextObject;
 } VisibleObject;
 
-void setX(VisibleObject* obj, double x) { obj->x = x; }
-void setY(VisibleObject* obj, double y) { obj->y = y; }
-void changeCostume(VisibleObject* obj, int a) { printf("change %d\n",obj->costumeNumber + a); obj->costumeNumber += a; }
 
 // we use casts for this:
 // yay polymorphism!
@@ -99,6 +96,10 @@ VisibleObject* objectList;
 VisibleClass** classList;
 int classCount = 0;
 int ccrs = 0;
+
+void setX(VisibleObject* obj, double x) { obj->x = x; }
+void setY(VisibleObject* obj, double y) { obj->y = y; }
+void changeCostume(VisibleObject* obj, int a) { obj->costumeNumber = (obj->costumeNumber + a) % ((VisibleClass_Sprite*) classList[obj->class])->costumeCount; }
 
 // global SDL context
 SDL_Window* window;
