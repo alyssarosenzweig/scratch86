@@ -315,7 +315,7 @@ void newVisibleObject(bool isVisible, enum ObjectType type, double x, double y, 
 
     obj->nextObject = NULL; 
 
-    if(objectList) {
+    if(objectList != NULL) {
         objectList->nextObject = obj;
     } else {
         objectList = obj;
