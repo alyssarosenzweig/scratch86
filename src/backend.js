@@ -173,13 +173,10 @@ function compileBlock(block, expectedType) {
     } else if(block[0] == "wait:elapsed:from:") {
         // sleep :)
 
-        var arg = compileBlock(block[1], "i32");
-        var i32ified = staticCast(arg[0], arg[1], "i32");
+        var arg = compileBlock(block[1], "double");
+        var doubled = staticCast(arg[0], arg[1], "double");
 
-        // TODO: deal with usleep, nanosleep, POSIX, and windows...
-        // this breaks for noninteger values :(
-
-        emit("call void @sleep(i32 " + i32ified + ")");
+        emit("call void @scratchsleep(double " + doubled + ")");
     } else if(block[0] == "doIfElse") {
         // if-else is trivial to map to LLVM
         // evaluate the condition, pass it into a br, and that's it :)
@@ -682,7 +679,7 @@ module.exports = function(project, output) {
 
     var preamble = "declare void @putchar(i32)\n" +
                     "declare void @exit(i32)\n" + 
-                    "declare void @sleep(i32)\n" + 
+                    "declare void @scratchsleep(double)\n" + 
                     "declare i8* @sdtoa(double)\n" + 
                     "declare double @atof(i8*)\n" + 
                     "declare void @puts(i8*)\n" + 

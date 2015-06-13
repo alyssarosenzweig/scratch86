@@ -317,3 +317,18 @@ char* sdtoa(double d) {
     snprintf(output, 15, "%lf", d);
     return output;
 }
+
+// cross-platform usleep, sort of
+
+void scratchsleep(double seconds) {
+    // split seconds into integer and decimal part
+    // then multiplication
+    // TODO: more precise way
+    // TODO: Windows
+    
+    struct timespec spec;
+    spec.tv_sec = (int) seconds;
+    spec.tv_nsec = ((seconds - (double) spec.tv_sec)) * (1000000000);
+
+    nanosleep(&spec, NULL);
+}
