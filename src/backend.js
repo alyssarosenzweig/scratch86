@@ -469,6 +469,8 @@ function compileBlock(block, expectedType) {
         
         compileBlock(["xpos:", block[1]], "void");
         compileBlock(["ypos:", block[2]], "void");  
+    } else if(block[0] == "nextCostume") {
+        emit("call void @changeCostume(i8* %this, i32 1)");
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
@@ -525,6 +527,8 @@ function compileBlock(block, expectedType) {
 function processScript(context, script) {
     console.log("Compiling script:");
     console.log(script);
+
+    functionContext.registerCount = 0;
 
     // first element of the script block is the hat block
     // this determines when this function will be called
@@ -701,6 +705,7 @@ module.exports = function(project, output) {
                     "\n" +
                     "declare void @setX(i8*, double)\n" +
                     "declare void @setY(i8*, double)\n" +
+                    "declare void @changeCostume(i8*, i32)\n" +
                     "\n" +
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 

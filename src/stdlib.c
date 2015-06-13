@@ -61,6 +61,7 @@ typedef struct VisibleObject_s {
 
 void setX(VisibleObject* obj, double x) { obj->x = x; }
 void setY(VisibleObject* obj, double y) { obj->y = y; }
+void changeCostume(VisibleObject* obj, int a) { printf("change %d\n",obj->costumeNumber + a); obj->costumeNumber += a; }
 
 // we use casts for this:
 // yay polymorphism!
@@ -233,7 +234,9 @@ void greenFlagClicked() {
 
     while(i < greenFlagScriptCount) {
         Script s = greenFlagScripts[i];
-        
+       
+        printf("Script %d\n", i);
+
         // as much as I want to call it directly,
         // we have to implement Scratch's threading capabilities correctly
         // (ugh)
@@ -272,7 +275,7 @@ void ScratchRenderStage() {
         location.x = SCALE_SCRATCH_X(currentObject->x);
         location.y = SCALE_SCRATCH_Y(currentObject->y);
 
-        SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[0],
+        SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[currentObject->costumeNumber],
                          NULL,
                          windowSurface,
                          &location );
