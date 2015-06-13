@@ -228,7 +228,7 @@ void ScratchInitialize() {
         // render everything here
 
         ScratchRenderStage();
-        SDL_Delay(20); // TODO: determine appropriate FPS for this
+        SDL_Delay(17); // TODO: determine appropriate FPS for this
     }
 }
 
@@ -255,10 +255,8 @@ void greenFlagClicked() {
         printf("Script %d\n", i);
 
         // as much as I want to call it directly,
-        // we have to implement Scratch's threading capabilities correctly
-        // (ugh)
+        // we have to implement Scratch's threading capabilities correctly...
         // to the pthread's!
-        // TODO: windows support
 
         callScript(s, classList[ greenFlagClasses[i] ]->mainObject);
 
@@ -280,19 +278,20 @@ void callScript(Script s, VisibleObject* obj) {
 
 void ScratchRenderStage() {
     // iterate through the linked list
-    // TODO: integrate with SDL
 
+    SDL_FillRect(windowSurface, NULL, 0x00000000); // TODO: optimized fill screen call
+   
     VisibleObject* currentObject = objectList;
     
     while(currentObject != NULL) {
         SDL_Rect location;
 
-        // TODO: scale X and Y to use Scratch's coordinate system instead of SDL's
-        
-        location.x = SCALE_SCRATCH_X(currentObject->x);
-        location.y = SCALE_SCRATCH_Y(currentObject->y);
+        VisibleClass_Sprite* class = (VisibleClass_Sprite*) classList[currentObject->class];
 
-        SDL_BlitSurface( ((VisibleClass_Sprite*) classList[currentObject->class])->costumes[currentObject->costumeNumber],
+        location.x = SCALE_SCRATCH_X(currentObject->x - class->costumeMeta[currentObject->costumeNumber].rotationCenterX);
+        location.y = SCALE_SCRATCH_Y(currentObject->y - class->costumeMeta[currentObject->costumeNumber].rotationCenterY);
+
+        SDL_BlitSurface( class->costumes[currentObject->costumeNumber],
                          NULL,
                          windowSurface,
                          &location );
