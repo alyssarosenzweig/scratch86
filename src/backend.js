@@ -471,6 +471,32 @@ function compileBlock(block, expectedType) {
         compileBlock(["ypos:", block[2]], "void");  
     } else if(block[0] == "nextCostume") {
         emit("call void @changeCostume(i8* %this, i32 1)");
+    } else if(block[0] == "turnRight:") {
+        var angle = compileBlock(block[1], "double");
+        angle = staticCast(angle[0], angle[1], "double");
+
+        emit("call void @changeA(i8* %this, double " + angle + ")");  
+    } else if(block[0] == "forward:") {
+        var amount = compileBlock(block[1], "double");
+        amount = staticCast(amount[0], amount[1], "double");
+
+        emit("call void @forward(i8* %this, double " + amount + ")");
+    } else if(block[0] == "randomFrom:to:") {
+        // implementing random from-to is nontrivial unfortunately
+        // it's not just a lower + rand() % delta,
+        // even though that would be nice
+        // see the standard library implementation for more information
+        
+        var lowerBound = compileBlock(block[1], "double");
+        lowerBound = staticCast(lowerBound[0], lowerBound[1], "double");
+
+        var upperBound = compileBlock(block[2], "double");
+        upperBound = staticCast(upperBound[0], upperBound[1], "double");
+
+        var output = newRegister();
+        emit(output + " = call double @randomRange(double " + lowerBound + ", double " + upperBound + ")");
+
+        return [output, "double"];
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
@@ -705,8 +731,12 @@ module.exports = function(project, output) {
                     "\n" +
                     "declare void @setX(i8*, double)\n" +
                     "declare void @setY(i8*, double)\n" +
+                    "declare void @changeA(i8*, double)\n" +
                     "declare void @changeCostume(i8*, i32)\n" +
+                    "declare void @forward(i8*, double)\n" +
+                    "declare double @randomRange(double, double)\n" +
                     "\n" +
+                    
                     "%struct.Variable = type { i8*, double, i32 }\n" +
                     (globalDefinitions.join("\n")) + 
                     "\n" +

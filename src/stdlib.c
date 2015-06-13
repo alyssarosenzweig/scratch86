@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include <pthread.h>
 
@@ -99,7 +100,15 @@ int ccrs = 0;
 
 void setX(VisibleObject* obj, double x) { obj->x = x; }
 void setY(VisibleObject* obj, double y) { obj->y = y; }
+void setA(VisibleObject* obj, double a) { obj->rotation = a; }
+
+void changeA(VisibleObject* obj, double a) { obj->rotation += a; }
 void changeCostume(VisibleObject* obj, int a) { obj->costumeNumber = (obj->costumeNumber + a) % ((VisibleClass_Sprite*) classList[obj->class])->costumeCount; }
+
+void forward(VisibleObject* obj, double steps) {
+    obj->x += sin(obj->rotation * M_PI / 180) * steps;
+    obj->y += cos(obj->rotation * M_PI / 180) * steps;
+}
 
 // global SDL context
 SDL_Window* window;
@@ -335,4 +344,13 @@ void scratchsleep(double seconds) {
     spec.tv_nsec = ((seconds - (double) spec.tv_sec)) * (1000000000);
 
     nanosleep(&spec, NULL);
+}
+
+// TODO: use proper techniques for randomness here
+// our current implementation is very trivial,
+// also incredibly biased.
+// google "Rand Considered Harmful" for an interesting lecture about the issue
+
+double randomRange(double lower, double upper) {
+    return lower + ( (rand() % ((int) (upper - lower))) );
 }
