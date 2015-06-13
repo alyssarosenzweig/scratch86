@@ -462,6 +462,13 @@ function compileBlock(block, expectedType) {
         var doubled = staticCast(argument[0], argument[1], "double");
 
         emit("call void @set" + (block[0][0].toUpperCase()) + "(i8* %this, double " + doubled + ")");
+    } else if(block[0] == 'gotoX:y:') {
+        // we cheat a bit
+        // ok, fine, we cheat a lot:
+        // just generate synthetic xpos: ypos: blocks ^_^
+        
+        compileBlock(["xpos:", block[1]], "void");
+        compileBlock(["ypos:", block[2]], "void");  
     } else if(!isNaN(block)) {
         // if the block is a number, we can probably just return it as is :)
         // TODO: infer type of whether it's an integer or a float
