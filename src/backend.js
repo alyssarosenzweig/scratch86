@@ -122,6 +122,14 @@ function staticCast(value, currentType, outputType) {
             console.error("I don't how to static cast a double to a "+outputType);
             process.exit(0);
         }
+    } else if(currentType == "i8*") {
+        if(outputType == "double") {
+            // ASCII to floating pointer.. hmm.. atof :P
+            
+            var output = newRegister();
+            emit(output + " = call double @atof(i8* " + value + ")");
+            return output;
+        }
     } else {
         console.error("I don't know how to static cast "+currentType);
         // TODO
@@ -370,7 +378,7 @@ function compileBlock(block, expectedType) {
         // we use only doubles for now :(
 
         console.log(value);
-        var value = compileBlock(block[2], "double"); // TODO: change to i32 and still make things work right
+        var value = compileBlock(block[2], "i8*"); // TODO: change to i32 and still make things work right
 
         emit("store i32 "+getTypeIndex(value[1])+", i32* getelementptr inbounds (%struct.Variable* @" + varname + ", i32 0, i32 2), align 4");
     
@@ -394,8 +402,7 @@ function compileBlock(block, expectedType) {
         var acceptableTypes = [];
 
         if(Array.isArray(expectedType)) acceptableTypes = expectedType;
-        else                            acceptableTypes = [expectedType];
-
+        else                            acceptableTypes = [expectedType, expectedType == "i8*" ? "double" : "i8*"];
 
         var baseID = functionContext.registerCount + 1; 
         var failLabel = baseID + (3 * acceptableTypes.length) - 1;
@@ -677,6 +684,7 @@ module.exports = function(project, output) {
                     "declare void @exit(i32)\n" + 
                     "declare void @sleep(i32)\n" + 
                     "declare i8* @sdtoa(double)\n" + 
+                    "declare double @atof(i8*)\n" + 
                     "declare void @puts(i8*)\n" + 
                     "declare i32 @strcmp(i8*, i8*)\n" + 
                     "declare void @ScratchInitialize()\n" + 
