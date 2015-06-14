@@ -6,7 +6,15 @@ scratc86 is a super fast compiler for MIT Scratch projects--- it's meaningless t
 Installing
 ============
 
-Simply clone the repository for the source code. scratch86 depends on LLVM, clang, SDL2, SDL2-image, POSIX support (Windows support is on the feature list, but for now only Macs and Linux machines are supported), node.js, and GNU Make. Once everything is installed, simply `cd` into the cloned directory and type `make` to build the sample "Animate the Crab" project. It will load automatically if all is well, and while running `make` may take a while, after that you can replay the project any time by running `a.out`. 
+Simply clone the repository for the source code. scratch86 depends on LLVM, clang, SDL2, SDL2-image, POSIX support (Windows support is on the feature list, but for now only Macs and Linux machines are supported), node.js, and GNU Make. Once everything is installed, simply `cd` into the cloned directory and type `make` to build the sample "Animate the Crab" project. It will load automatically if all is well, and while running `make` may take a while, after that you can replay the project any time by running `a.out`.
+
+### Ubuntu
+
+    $ git clone https://github.com/bobbybee/scratch86.git
+    $ cd scratch86
+    # apt-get install nodejs-legacy npm clang libsdl2-dev libsdl2-image-dev
+    $ npm install minimist svg2png
+    $ make
 
 Is feature XYZ supported?
 ============

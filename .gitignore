@@ -1,0 +1,6 @@
+node_modules/
+*.out
+*.bc
+*.ll
+*.png
+*.svg
